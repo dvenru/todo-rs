@@ -8,7 +8,7 @@ pub struct WhereCondition {
 impl ToString for WhereCondition {
     fn to_string(&self) -> String {
         let mut res = format!(
-            "{} {} {}",
+            "{} {} '{}'",
             self.field,
             self.operator,
             self.value

@@ -1,15 +1,17 @@
+use chrono::NaiveDate;
+
 #[derive(Debug)]
 pub enum TodoStatus {
     On,
     Done
 }
 
-impl From<String> for TodoStatus {
-    fn from(value: String) -> Self {
+impl TodoStatus {
+    pub fn from_string(value: String) -> Result<Self, String> {
         match value.trim() {
-            "on" => TodoStatus::On,
-            "done" => TodoStatus::Done,
-            _ => panic!("Неправильное значение статуса! Используйте 'on' или 'done'")
+            "on" => Ok(TodoStatus::On),
+            "done" => Ok(TodoStatus::Done),
+            _ => Err("Ошибка ввода статуса! Используйте 'on' или 'done'.".to_string())
         }
     }
 }
@@ -33,7 +35,8 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub fn update(&mut self, args: &[String]) {
+    /// Обновляет значения полей задачи
+    pub fn update(&mut self, args: &[String]) -> Result<(), String> {
         if let Some(arg) = args.get(0) {
             self.description = arg.clone()
         }
@@ -44,23 +47,41 @@ impl Todo {
             self.category = arg.clone()
         }
         if let Some(arg) = args.get(3) {
-            self.status = TodoStatus::from(arg.clone())
+            match TodoStatus::from_string(arg.clone()) {
+                Ok(s) => self.status = s,
+                Err(e) => return Err(e)
+            }
         }
+
+        Ok(())
     }
 
+    /// Выводит в консоль форматированный вариант задачи
     pub fn format_print(&self) {
-
+        println!("{}", self.name);
+        println!("{}", self.description);
+        println!("Category: {}", self.category);
+        println!("Date: {}", self.date);
+        println!("Status: {} \n", self.status.to_string());
     }
 }
 
-impl From<&[String]> for Todo {
-    fn from(value: &[String]) -> Self {
-        Todo {
-            name: value[0].clone(),
-            description: value[1].clone(),
-            date: value[2].clone(),
-            category: value[3].clone(),
-            status: TodoStatus::from(value[4].clone())
-        }
+impl Todo {
+    pub fn from_string_slice(value: &[String]) -> Result<Self, String> {
+        Ok(
+            Todo {
+                name: value[0].clone(),
+                description: value[1].clone(),
+                date: match NaiveDate::parse_from_str(&value[2], "%Y-%m-%d") {
+                    Ok(_) => value[2].clone(),
+                    Err(_) => return Err("Ошибка ввода даты! Формат даты: год-месяц-день".to_string())
+                },
+                category: value[3].clone(),
+                status: match TodoStatus::from_string(value[4].clone()) {
+                    Ok(s) => s,
+                    Err(e) => return Err(e)
+                }
+            }
+        )
     }
 }

@@ -1,9 +1,6 @@
-use chrono::prelude::*;
 use crate::data_controller::{query::CONNECTING_STRING, select_builder::WhereCondition, todo::Todo, DataBase};
 
 pub mod tools;
-
-use tools::*;
 
 pub struct App;
 
@@ -12,15 +9,13 @@ impl App {
     /// Формат вызова: add <name> <description> <date> <category> <status>
     fn add(args: &[String]) {
         if args.len() >= 4 {
-            let data = Todo::from(args);
-
-            match NaiveDate::parse_from_str(&data.date, "%Y-%m-%d") {
-                Ok(_) => (),
-                Err(_) => {
-                    println!("Ошибка ввода даты! Формат даты: год-месяц-день");
-                    return;
-                }
-            }
+            let data = match Todo::from_string_slice(args) {
+              Ok(t) => t,
+              Err(e) => {
+                println!("{}", e);
+                return;
+              }  
+            };
 
             DataBase::connect(CONNECTING_STRING)
                 .add(data)
@@ -47,7 +42,7 @@ impl App {
                 .pop()
                 .unwrap();
             
-            data.update(&args[1..]);
+            data.update(&args[1..]).unwrap();
             db.update(data);
 
         } else {
@@ -73,6 +68,11 @@ impl App {
     fn select(args: &[String]) {
         if args.contains(&"*".to_string()) && args.len() < 3 {
             let mut db = DataBase::connect(CONNECTING_STRING);
+            
+            for todo in db.select(None).unwrap().iter() {
+                println!("=================");
+                todo.format_print();
+            }
 
         } else if args.contains(&"*".to_string()) && args.len() >= 3 {
             let mut db = DataBase::connect(CONNECTING_STRING);
@@ -95,8 +95,12 @@ impl App {
                 }
             }
 
-            println!("{:?}", db.select(Some(params)).unwrap())
+            for todo in db.select(Some(params)).unwrap().iter() {
+                todo.format_print();
+            }
+
         } else {
+            println!("=================");
             println!("Недостаточно аргументов!")
         }
     }

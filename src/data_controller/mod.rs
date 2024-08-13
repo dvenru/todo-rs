@@ -112,7 +112,7 @@ impl<'a> DataBase<'a> {
                     description: row.get(1).unwrap(),
                     date: row.get(2).unwrap(),
                     category: row.get(3).unwrap(),
-                    status: TodoStatus::from(row.get::<usize, String>(4).unwrap())
+                    status: TodoStatus::from_string(row.get(4).unwrap()).unwrap()
                 }
             )
         }).unwrap()
